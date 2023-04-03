@@ -1,0 +1,212 @@
+---
+title: "HW5"
+author: "Getong Zhong"
+date: "2023-03-24"
+header-includes:
+  - \usepackage[utf8]{inputenc}
+output: 
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("lattice")
+library("ellipse")
+library("HSAUR3")
+library("ggplot2")
+```
+
+## 5.1
+
+The covariance matrix of the observed variables can be written as: Σ = Cov(ΛF + ε), where F is the matrix of common factors and ε is the matrix of specific factor, due to the assumption of unique variance. And then we can apply some transformation on the equation: 
+Σ = Cov(ΛF) + Cov(ε) = Λ Cov(F) Λ^T + Ψ, where Cov(F) is the covariance matrix of the common factors, and since the factors are uncorrelated, it is a diagonal matrix with variances on the diagonal. Ψ is the covariance matrix of the specific factors, which is also a diagonal matrix with specific variances on the diagonal.Thus, we got Σ = ΛΛ^T + Ψ. If the factor allowed correlated, we will have the privous form, that is: Σ = Λ Cov(F) Λ^T + Ψ, since the covariance matrix of the common factors will no longer be a diagonal matrix.
+
+## 5.2
+
+Let's compute the communalities using the transformed factor loadings, denoted as h_i*:
+h_i* = Σ(λ*_ij)^2. 
+Since Λ* = ΛM, we can write λ*_ij as: 
+λ*_ij = Σ(λ_ik m_kj),
+Substituting this expression in the equation for h_i*:
+h_i* = Σ((Σ(λ_ik m_kj))^2) = Σ(λ_ik m_kj λ_il m_lj) = Σ(λ_ik λ_il Σ(m_kj m_lj))
+Applying the property of the orthogonal matrix (M^T M = I):
+h_i* = Σ(λ_ik λ_il δ_kl)
+Now, applying the Kronecker delta property:
+h_i* = Σ(λ_ik λ_ik), that is h_i* = h_i.DONE.
+
+## 5.3
+
+Proportion of Variance Explained for the jth factor = (Eigenvalue of jth factor) / (Total variance), that is PVE_j = λ_j / ∑λ_i
+
+## 5.4
+
+```{r}
+d <- c(0.447,          
+   0.422, 0.619,       
+   0.435, 0.604, 0.583,        
+   0.114, 0.068, 0.053, 0.115,        
+   0.203, 0.146, 0.139, 0.258, 0.349,   
+   0.091, 0.103, 0.110, 0.122, 0.209, 0.221,
+   0.082, 0.063, 0.066, 0.097, 0.321, 0.355, 0.201,
+   0.513, 0.445, 0.365, 0.482, 0.186, 0.315, 0.150, 0.154,
+   0.304, 0.318, 0.240, 0.368, 0.303, 0.377, 0.163, 0.219, 0.534,
+   0.245, 0.203, 0.183, 0.255, 0.272, 0.323, 0.310, 0.288, 0.301, 0.302,
+   0.101, 0.088, 0.074, 0.139, 0.279, 0.367, 0.232, 0.320, 0.204, 0.368, 0.340,
+   0.245, 0.199, 0.184, 0.293, 0.278, 0.545, 0.232, 0.314, 0.394, 0.467, 0.392, 0.511)
+
+ druguse <- diag(13) / 2
+
+ druguse[upper.tri(druguse)] <- d
+
+ druguse <- druguse + t(druguse)
+
+ rownames(druguse) <- colnames(druguse) <- c("cigarettes", "beer", "wine", "liquor", "cocaine",
+         "tranquillizers", "drug store medication", "heroin",
+         "marijuana", "hashish", "inhalants", "hallucinogenics", "amphetamine")
+
+"life" <- structure(.Data = list(c(63., 34., 38., 59., 56., 62., 50., 65., 56., 69., 65., 64., 56., 60., 61., 49., 59., 63.,59., 65., 65., 64., 64., 67., 61., 68., 67., 65., 59., 58., 57.)
+ , c(51., 29., 30., 42., 38., 44., 39., 44., 46., 47., 48., 50., 44., 44., 45., 40., 42., 44., 44., 48., 48., 63.,
+         43., 45., 40., 46., 45., 46., 43., 44., 46.)
+ , c(30., 13., 17., 20., 18., 24., 20., 22., 24., 24., 26., 28., 25., 22., 22., 22., 22., 23., 24., 28., 26., 21.,
+         21., 23., 21., 23., 23., 24., 23., 24., 28.)
+ , c(13., 5., 7., 6., 7., 7., 7., 7., 11., 8., 9., 11., 10., 6., 8., 9., 6., 8., 8., 14., 9., 7., 6., 8., 10., 8.,
+         8., 9., 10., 9., 9.)
+ , c(67., 38., 38., 64., 62., 69., 55., 72., 63., 75., 68., 66., 61., 65., 65., 51., 61., 67., 63., 68., 67., 68.,
+         68., 74., 67., 75., 74., 71., 66., 62., 60.)
+ , c(54., 32., 34., 46., 46., 50., 43., 50., 54., 53., 50., 51., 48., 45., 49., 41., 43., 48., 46., 51., 49., 47.,
+         47., 51., 46., 52., 51., 51., 49., 47., 49.)
+ , c(34., 17., 20., 25., 25., 28., 23., 27., 33., 29., 27., 29., 27., 25., 27., 23., 22., 26., 25., 29., 27., 25.,
+         24., 28., 25., 29., 28., 28., 27., 25., 28.)
+ , c(15., 6., 7., 8., 10., 14., 8., 9., 19., 10., 10., 11., 12., 9., 10., 8., 7., 9., 8., 13., 10., 9., 8., 10., 11.,
+         10., 10., 10., 12., 10., 11.)
+ )
+ , class = "data.frame" 
+ , names = c("m0", "m25", "m50", "m75", "w0", "w25", "w50", "w75")
+ , row.names = c("Algeria", "Cameroon", "Madagascar", "Mauritius", "Reunion", "Seychelles", "South Africa (C)", "South Africa (W)",
+         "Tunisia", "Canada", "Costa Rica", "Dominican Rep.", "El Salvador", "Greenland", "Grenada", "Guatemala",
+         "Honduras", "Jamaica", "Mexico", "Nicaragua", "Panama", "Trinidad (62)", "Trinidad (67)",
+         "United States (66)", "United States (NW66)", "United States (W66)", "United States (67)", "Argentina",
+         "Chile", "Colombia", "Ecuador")
+ )
+
+
+toLatex(HSAURtable(life), pcol = 1, rownames = TRUE,
+    caption = "Life expectancies for different countries by age and gender.",
+     label = "ch:EFA:life:tab")
+```
+
+```{r}
+m <- life[,1:4]
+f <- life[,5:8]
+factanal(m, factors = 1, method ="mle", scores = "regression")
+factanal(f, factors = 1, method ="mle", scores = "regression")
+```
+
+The factor analysis results indicate that the life expectancy variables for women have a stronger association with the factor and a larger proportion of the variance explained than those for men. However, one factor may not be sufficient to explain the relationships among the variables for both groups, since the p-value of both groups are less than 0.05. 
+
+## 5.5
+
+### Factor analysis:
+```{r}
+R <- matrix(c(1.00, 0.44, 0.41, 0.29, 0.33, 0.25,
+              0.44, 1.00, 0.35, 0.35, 0.32, 0.33,
+              0.41, 0.35, 1.00, 0.16, 0.19, 0.18,
+              0.29, 0.35, 0.16, 1.00, 0.59, 0.47,
+              0.33, 0.32, 0.19, 0.59, 1.00, 0.46,
+              0.25, 0.33, 0.18, 0.47, 0.46, 1.00),   nrow = 6, ncol = 6, byrow = TRUE)
+rownames(R) <- colnames(R) <- c("French", "English", "History", "Arithmetic", "Algebra", "Geometry")
+
+fa <- factanal(R, factors = 2, covmat = R, method = "mle", rotation = "none")
+```
+
+### Plot the derived loadings:
+```{r}
+loadings <- data.frame(Subject = rownames(fa$loadings),
+                          Factor1 = fa$loadings[, 1],
+                          Factor2 = fa$loadings[, 2])
+
+# Plot the derived loadings
+ggplot(loadings, aes(x = Factor1, y = Factor2, label = Subject)) +
+  geom_point() +
+  geom_text(vjust = -1) +
+  ggtitle("Factor Loadings") +
+  xlab("Factor 1") +
+  ylab("Factor 2") +
+  theme_minimal()
+```
+### Find the rthogonal rotation:
+```{r}
+rotated <- factanal(R, factors = 2, covmat = R, method = "mle", rotation = "varimax")
+print(rotated)
+
+rotation <- data.frame(Subject = rownames(rotated$loadings),
+                                  Factor1 = rotated$loadings[, 1],
+                                  Factor2 = rotated$loadings[, 2])
+
+# Plot the rotated loadings
+ggplot(rotation, aes(x = Factor1, y = Factor2, label = Subject)) +
+  geom_point() +
+  geom_text(vjust = -1) +
+  ggtitle("Rotated Factor Loadings (Varimax)") +
+  xlab("Factor 1") +
+  ylab("Factor 2") +
+  theme_minimal()
+
+```
+
+## 5.6
+
+### (a)
+From the screen plot we can see that the appropriate number of components is 2.
+```{r}
+cor_matrix <- matrix(c(1.00, -0.04, 0.61, 0.45, 0.03, -0.29, -0.30, 0.45, 0.30,
+                       -0.04, 1.00, -0.07, -0.12, 0.49, 0.43, 0.30, -0.31, -0.17,
+                       0.61, -0.07, 1.00, 0.59, 0.03, -0.13, -0.24, 0.59, 0.32,
+                       0.45, -0.12, 0.59, 1.00, -0.08, -0.21, -0.19, 0.63, 0.37,
+                       0.03, 0.49, 0.03, -0.08, 1.00, 0.47, 0.41, -0.14, -0.24,
+                       -0.29, 0.43, -0.13, -0.21, 0.47, 1.00, 0.63, -0.13, -0.15,
+                       -0.30, 0.30, -0.24, -0.19, 0.41, 0.63, 1.00, -0.26, -0.29,
+                       0.45, -0.31, 0.59, 0.63, -0.14, -0.13, -0.26, 1.00, 0.40,
+                       0.30, -0.17, 0.32, 0.37, -0.24, -0.15, -0.29, 0.40, 1.00),
+                     nrow = 9, ncol = 9, byrow = TRUE)
+
+pca <- prcomp(cor_matrix, scale. = TRUE)
+print(pca)
+eigenvalues_df <- data.frame(Component = 1:length(pca$sdev), Eigenvalue = pca$sdev^2)
+
+# Plot the scree plot
+ggplot(eigenvalues_df, aes(x = Component, y = Eigenvalue)) +
+  geom_point() +
+  geom_line() +
+  ggtitle("Scree Plot") +
+  xlab("Component") +
+  ylab("Eigenvalue") +
+  theme_minimal() +
+  scale_x_continuous(limits = c(1, 9),        
+                          breaks = seq(1, 9, 1),   
+                          labels = seq(1, 9, 1))
+```
+
+### (b)
+Compare the results we can see that factors 5 has lowest value of fit score (0.0087), which indicate a bettwe fit, and df is not equal to 0 (1),  therefore, we choose factor 5.
+```{r}
+
+factanal(factors = 1, covmat = cor_matrix, method = "mle")
+factanal(factors = 2, covmat = cor_matrix, method = "mle")
+factanal(factors = 3, covmat = cor_matrix, method = "mle")
+factanal(factors = 4, covmat = cor_matrix, method = "mle")
+
+factanal(factors = 5, covmat = cor_matrix, method = "mle")
+
+```
+
+### (c)
+For the orthogonal rotation, we can see that the loadings are mostly high for each variable on only one factor, which suggests that the factors are relatively independent of each other. For the oblique rotation, we can see that the loadings are also high for each variable on one factor, but there is more overlap between factors. The correlations between factors, represented by the phi matrix, suggest that there is some correlation between factors 1 and 3, factors 2 and 5, and factors 3 and 5. Overall, based on the context provided in the question, we can say that the results form orthogonal rotation and oblique rotation  suggest that people's beliefs about pain are multifaceted and can be related to beliefs about doctors' skills and control over pain, personal responsibility for pain, seeking medical advice, pain resulting from carelessness, and a less clear factor related to beliefs about pain and behavior.
+```{r}
+library(GPArotation)
+fa_solution <- factanal(factors = 5, covmat = cor_matrix, rotation = "varimax")
+(varimax_solution <- varimax(fa_solution$loadings))
+(oblimin_solution <- oblimin(fa_solution$loadings))
+
+```

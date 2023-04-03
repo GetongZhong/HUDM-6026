@@ -1,0 +1,116 @@
+---
+title: "HW1"
+author: "Getong Zhong"
+date: "2023-02-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.1
+### Correlation
+```{r}
+hypo <-
+  structure(list(individual = 1:10, sex = structure(c(2L, 2L, 2L,
+    2L, 2L, 1L, 1L, 1L, 1L, 1L), .Label = c("Female", "Male"), class = "factor"),
+    age = c(21L, 43L, 22L, 86L, 60L, 16L, NA, 43L, 22L, 80L),
+    IQ = c(120L, NA, 135L, 150L, 92L, 130L, 150L, NA, 84L, 70L
+    ), depression = structure(c(2L, 1L, 1L, 1L, 2L, 2L, 2L, 2L,
+    1L, 1L), .Label = c("No", "Yes"), class = "factor"), health = structure(c(3L,
+    3L, 1L, 4L, 2L, 2L, 3L, 1L, 1L, 2L), .Label = c("Average",
+    "Good", "Very good", "Very poor"), class = "factor"), weight = c(150L,
+    160L, 135L, 140L, 110L, 110L, 120L, 120L, 105L, 100L)), .Names = c("individual",
+    "sex", "age", "IQ", "depression", "health", "weight"), 
+    class = "data.frame", row.names = c(NA, -10L))
+hypo[is.na(hypo)] = 0
+cor(hypo[,c(3,4,7)])
+
+```
+### Covariance
+```{r}
+cov(hypo[,c(3,4,7)])
+
+```
+
+## 1.2
+### Correlation
+```{R}
+hypo <-
+  structure(list(individual = 1:10, sex = structure(c(2L, 2L, 2L,
+    2L, 2L, 1L, 1L, 1L, 1L, 1L), .Label = c("Female", "Male"), class = "factor"),
+    age = c(21L, 43L, 22L, 86L, 60L, 16L, NA, 43L, 22L, 80L),
+    IQ = c(120L, NA, 135L, 150L, 92L, 130L, 150L, NA, 84L, 70L
+    ), depression = structure(c(2L, 1L, 1L, 1L, 2L, 2L, 2L, 2L,
+    1L, 1L), .Label = c("No", "Yes"), class = "factor"), health = structure(c(3L,
+    3L, 1L, 4L, 2L, 2L, 3L, 1L, 1L, 2L), .Label = c("Average",
+    "Good", "Very good", "Very poor"), class = "factor"), weight = c(150L,
+    160L, 135L, 140L, 110L, 110L, 120L, 120L, 105L, 100L)), .Names = c("individual",
+    "sex", "age", "IQ", "depression", "health", "weight"), 
+    class = "data.frame", row.names = c(NA, -10L))
+hypo
+hypo[,'age'][is.na(hypo[,'age'])] = mean(hypo[,'age'],na.rm=TRUE)
+hypo[,'IQ'][is.na(hypo[,'IQ'])] = mean(hypo[,'IQ'],na.rm=TRUE)
+hypo[,'weight'][is.na(hypo[,'weight'])] = mean(hypo[,'weight'],na.rm=TRUE)
+cor(hypo[,c(3,4,7)])
+```
+
+### Covariance
+
+```{r}
+cov(hypo[,c(3,4,7)])
+```
+
+## 1.3
+
+### Normal Probablity plots
+```{r}
+par(mfrow=c(1,3))
+qqnorm(hypo[,'age'], main = "age"); qqline(hypo[,'age'])
+qqnorm(hypo[,'IQ'], main = "IQ"); qqline(hypo[,'IQ'])
+qqnorm(hypo[,'weight'], main = "weight"); qqline(hypo[,'weight'])
+
+```
+
+
+### Chi-square plot
+```{r}
+x<-hypo[,c(3,4,7)]
+S <- cov(x)
+cm <- colMeans(x)
+d <- apply(x, MARGIN = 1, function(x) t(x - cm) %*% solve(S) %*% (x - cm))
+plot(qc <- qchisq((1:nrow(hypo) - 1/2) / nrow(hypo), df = 3),
+        sd <- sort(d),
+        xlab = expression(paste(chi[3]^2, " Quantile")),
+        ylab = "Ordered distances", xlim = range(qc) * c(1, 1.1))
+abline(a = 0, b = 1)
+
+```
+
+Both the normal probability plots and the chi-square plot don't show much evidence of any departures from linearity. limited to the small size of the data, we cannot tell the exist of departures from linearity, but from the chi-square plot, there are certain sort of outlier exist.
+
+## 1.4
+```{r}
+V <- matrix(c(3.8778, 2.8110, 3.1480, 3.5062, 2.8110, 2.1210, 2.2669, 2.5690, 
+         3.1480, 2.2669, 2.6550, 2.8341, 3.5062, 2.5690, 2.8341, 3.2352), 
+       4, 4, byrow = TRUE)
+
+cov2cor(V)
+```
+
+## 1.5
+
+### Euclidean Distance Matrix
+```{r}
+M <- matrix(c(3,6,4,0,7,4,2,7,4,6,4,0,3,1,5,6,2,6,1,1,1,6,2,1,4,
+         5,1,2,0,2,1,1,2,6,1,1,1,5,4,4,7,0,1,3,3,3,3,0,5,1),10,5,byrow = TRUE)
+dist(M)
+```
+
+### City Block Distance Matrix
+```{r}
+Y<-matrix(rowSums(M))
+fn <- function(x, y) abs(x - y)
+proxy::dist(Y, method = fn)
+```

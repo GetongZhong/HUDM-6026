@@ -1,0 +1,71 @@
+---
+title: "hw6"
+author: "Getong Zhong"
+date: "2023-03-31"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+## 6.1 
+```{r}
+crime <- read.table("crime.txt", header = TRUE)
+
+
+sd_crime <- sapply(crime, sd)
+crime_sd <- sweep(crime, 2, sd_crime, FUN = "/")
+kmeans(crime_sd, centers = 2)$centers * sd_crime
+```
+From the above results we can see that, when standardized with standard deviation, we can still observe that the centroids still show significant differences in most variables, but some variables have smaller differences between the two clusters. For example, the average Murder rates are much closer between the two clusters compared to the range-standardized results. In general, the comparision between the two methods results show that the two methods have some impact on the clustering results, as range-standardized method creating more separation between clusters.
+
+## 6.2
+```{r}
+library(ggplot2)
+library(GGally)
+
+data("pottery", package = "HSAUR2")
+pottery$kiln <- as.numeric(as.character(pottery$kiln))
+attach(pottery)
+pca_result <- prcomp(pottery, scale = TRUE)
+pca_scores <- as.data.frame(pca_result$x[, 1:5])
+pca_scores_with_kiln <- cbind(pca_scores, Kiln = kiln)
+
+
+plot <- ggpairs(pca_scores_with_kiln, columns = 1:5,
+                upper = list(continuous = "density"),
+                diag = list(continuous = "barDiag"),
+                lower = list(continuous = "points", combo = "box"),
+                mapping = ggplot2::aes(color = Kiln, label = Kiln))
+
+
+plot <- plot + theme(legend.position = "none")
+print(plot)
+
+detach(pottery)
+```
+
+##6.3
+From the boxplot, we can see that the level of SO2 in each cluster didn't varied much. In each of the box, the SO2 remain around the level of 20.
+```{r}
+data("USairpollution", package = "HSAUR2")
+library(mclust)
+
+
+mclust_result <- Mclust(USairpollution[,-1])
+summary(mclust_result)
+
+USairpollution$Cluster <- mclust_result$classification
+
+boxplot(SO2 ~ Cluster, data = USairpollution, main = "SO2 Concentration by Cluster"
+        , xlab = "Cluster", ylab = "SO2 Concentration")
+```
+
+
+And then lets look at the results from a formal siginificant test, ANOVA.In the ANOVA table,  the p-value of 0.41, which is greater than the significance level of 0.05. Therefore,  we fail to reject the null hypothesis and we do not have enough evidence to conclude that there is a significant difference in SO2 concentrations between the clusters based on the six climate and ecology variables.
+```{r}
+anova_result <- aov(SO2 ~ Cluster, data = USairpollution)
+summary(anova_result)
+```

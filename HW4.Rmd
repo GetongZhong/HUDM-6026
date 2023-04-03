@@ -1,0 +1,74 @@
+---
+title: "HW4"
+author: "Getong Zhong"
+date: "2023-03-02"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 4.1 
+the derived solution shows that the objects arranged in a linear fashion with the objects in the middle being closer to each other and the objects towards the ends being farther apart. This is because the similarity between two objects decreases as the absolute difference between their coordinates (i and j) increases, with a cutoff point of 25. Therefore, the objects towards the middle higher similarities and will be placed closer together in the derived solution, while the objects towards the ends have lower similarities and will be placed farther apart.
+```{r}
+s <- matrix(0, nrow = 51, ncol = 51)
+for (i in 1:51) {
+  for (j in 1:51) {
+    if (i == j) {
+      s[i,j] <- 9
+    } else if (abs(i - j) <= 3) {
+      s[i,j] <- 8
+    } else if (abs(i - j) <= 6) {
+      s[i,j] <- 7
+    } else if (abs(i - j) <= 9) {
+      s[i,j] <- 6
+    } else if (abs(i - j) <= 12) {
+      s[i,j] <- 5
+    } else if (abs(i - j) <= 15) {
+      s[i,j] <- 4
+    } else if (abs(i - j) <= 18) {
+      s[i,j] <- 3
+    } else if (abs(i - j) <= 21) {
+      s[i,j] <- 2
+    } else if (abs(i - j) <= 24) {
+      s[i,j] <- 1
+    } else {
+      s[i,j] <- 0
+    }
+  }
+}
+d <- matrix(0, nrow = 51, ncol = 51)
+for (i in 1:51) {
+  for (j in 1:51) {
+    d[i,j] <- sqrt(s[i,i] + s[j,j] - 2*s[i,j])
+  }
+}
+
+(cmd <- cmdscale(d, k = 2, eig = TRUE))
+plot(cmd$points, type="n", xlab="Dimension 1", ylab="Dimension 2")
+text(cmd$points[,1], cmd$points[,2], labels=1:51)
+```  
+
+## 4.2 
+```{r}
+chi_dist <- function(x) {
+  row <- rowSums(x)
+  col <- colSums(x)
+  total <- sum(x)
+  exp_vals <- outer(row, col, '*')/total
+  row_chi <- apply(x, 1, function(row) sum((row-exp_vals[row!=0,col!=0])^2/exp_vals[row!=0,col!=0]))
+  col_chi <- apply(x, 2, function(col) sum((col-exp_vals[row!=0,col!=0])^2/exp_vals[row!=0,col!=0]))
+  list(row_chi= as.matrix(row_chi), col_chi = as.matrix(col_chi))
+}
+```
+
+## 4.3
+```{r}
+library(HSAUR3)
+dat <- as.matrix(gardenflowers)
+(cmd <- cmdscale(dat, k = 2, eig = TRUE))
+
+plot(cmd$points[,1], cmd$points[,2], xlab = "Dimension 1", ylab = "Dimension 2", main = "Metric MDS", type="n")
+text(cmd$points[,1], cmd$points[,2], labels = row.names(dat), cex = 0.7)
+```     
