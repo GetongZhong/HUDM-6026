@@ -1,1 +1,1 @@
-# HUDM-6026
+# HUDM-6026 Computational Statistics 
