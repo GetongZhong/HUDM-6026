@@ -1,0 +1,109 @@
+---
+title: "HUDM 6026 HW 10"
+author: "Frank Li & Getong Zhong "
+date: "2023-04-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## CH6 P10 
+### (a)
+```{r}
+set.seed(123)
+p = 20
+n = 1000
+X = matrix(rnorm(n*p), n, p)
+b = rnorm(p)
+b[3] = b[9] = b[14] = b[17] = b[19] = 0
+eps = rnorm(n)
+Y = X %*% b + eps
+```
+
+### (b)
+```{r}
+set.seed(1234)
+train <- sample(seq(1000), 100, replace = FALSE)
+test <- -train
+x.train <- X[train, ]
+x.test <- X[test, ]
+y.train <- Y[train]
+y.test <- Y[test]
+```
+
+### (c)
+```{r}
+library(leaps)
+data.train <- data.frame(y=y.train, x=x.train)
+regfit.full <- regsubsets(y~., , data=data.train, nvmax=20)
+train.mat <- model.matrix(y~., data=data.train,, nvman=20)
+val.errors <- rep(NA, 20)
+for (i in 1:20){
+  coefi <- coef(regfit.full, id=i)
+  pred <- train.mat[,names(coefi)]%*%coefi
+  val.errors[i] = mean((pred-y.train)^2)
+}
+plot(val.errors, xlab="Number of predictors", ylab="Training set MSE", pch=19, type="b")
+```
+
+### (d)
+```{r}
+data.test <- data.frame(y=y.test, x=x.test)
+test.mat <- model.matrix(y~., data=data.test, nvmax=20)
+for (i in 1:20){
+  coefi <- coef(regfit.full, id=i)
+  pred <- test.mat[,names(coefi)]%*%coefi
+  val.errors[i] = mean((pred-y.test)^2)
+}
+plot(val.errors, xlab="Number of predictors", ylab="Test MSE", pch=19, type="b")
+```
+
+### (e)
+```{r}
+which.min(val.errors)
+```
+
+The model with 13 variables has the lowest test set MSE. 
+
+### (f)
+```{r}
+coef(regfit.full, which.min(val.errors))
+```
+
+The model at which the test set MSE is minimized removed the 5 variables that we 
+zeroed out, X3, X9, X14, X17, X19. 
+
+
+### (e)
+Compare to the Test MSE in (d), we find that these two plot has a very similar pattern, when there are 6 predictors, the MSE and sum of mean difference of beta are both higher than when there are 5 and 7 predictors, besides that, the test MSE and sum of mean difference of beta decreases as number of predictors increases.
+```{r}
+squared_diffs <- matrix(NA, nrow = 20, ncol = p)
+colnames(squared_diffs) <- paste0("x.", 1:p)  
+rownames(squared_diffs) <- 1:20
+for (i in 1:20) {
+  coefi <- coef(regfit.full, id = i)
+  estimated_beta <- rep(0, p)
+  names(estimated_beta) <- colnames(squared_diffs)
+  non_intercept_indices <- names(coefi)[-1]
+  estimated_beta[names(coefi[non_intercept_indices])] <- coefi[non_intercept_indices]
+  
+  diff <- b - estimated_beta
+  squared_diffs[i, ] <- diff^2
+}
+sum_squared_diffs <- rowSums(squared_diffs)
+plot(1:20, sum_squared_diffs, xlab = "Number of predictors", ylab = "Sum of Squared Differences",
+     pch = 19, type = "b")
+```
+
+
+
+
+
+
+
+
+
+
+

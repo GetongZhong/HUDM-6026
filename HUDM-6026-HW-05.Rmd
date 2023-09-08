@@ -1,0 +1,272 @@
+---
+title: "HUDM 6026 HW 05"
+author: 'Getong Zhong (gz2338) & Ruoqiao Li (rl3288) '
+date: "2023-02-26"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1 
+```{r}
+f_prime <- function(x) -2*x/(x^2+1) + (1/3)*x^(-2/3)
+```
+
+
+# 2 
+```{r}
+f <- function(x) -log(x^2 + 1) + x^(1/3)
+
+x <- seq(0, 4, 0.01)
+
+plot(x, f(x), type = "l", col = "blue", lty = 1, ylim = c(-2, 3),
+     xlab = "x", ylab = "y", main = "f(x) and f'(x)")
+
+lines(x, f_prime(x), col = "red", lty = 2)
+legend("topright", legend = c("f(x)", "f'(x)"), col = c("blue", "red"),
+       lty = c(1, 2))
+
+```
+
+## 3 
+### golden section search
+```{r}
+golden <- function(f, int, precision = 1e-6)
+{
+  # ::: This function implements the golden section search for a 
+  # ::: *minimum* for the function 'f' on the range [int]
+  # ::: with precision no greater than 'precision'.
+  # ::: Note: 'int' is an interval such as c(2,3).
+  # ::: If you want to *maximize*, multiply your function by -1.
+  
+  rho <- (3-sqrt(5))/2 # ::: Golden ratio
+  # ::: Work out first iteration here
+  f_a <- f(int[1] + rho*(diff(int)))
+  f_b <- f(int[2] - rho*(diff(int)))
+  ### How many iterations will we need to reach the desired precision?
+  N <- ceiling(log(precision/(diff(int)))/log(1-rho))
+  for (i in 1:(N))                    # index the number of iterations
+  {
+    if (f_a < f_b)  
+    {
+      int[2] <- int[1] + rho * (int[2] - int[1])
+      f_b <- f_a
+      f_a <- f(int[1] + rho * (diff(int)))
+
+      
+    } else{
+      if (f_a >= f_b)
+      {
+        int[1] <- int[1] + rho * (int[2] - int[1])
+        f_a <- f_b
+        f_b <- f(int[2] - rho * (diff(int)))
+      } }
+    print(paste0("Iteration ", i+1, "; Estimate = ", (f_a + f_b)/2) )
+  }
+  cat("Minimum found at x = ", (f_a + f_b)/2, "; Iterations: ", i, "\n")
+  (f_a + f_b)/2
+}
+
+```
+
+### bisection method
+```{r}
+bisection <- function(f_prime, int, precision = 1e-7)
+{
+  # ::: f_prime is the function for the first derivative
+  # ::: of f, int is an interval such as c(0,1) which 
+  # ::: denotes the domain
+  
+  N <- ceiling(log(precision/(diff(int)))/log(.5))
+  f_prime_a <- f_prime(int[1] + diff(int)/2)
+  for (i in 1:N)
+  {
+    if(f_prime_a < 0)
+    {
+      int[1] <- int[1] + diff(int)/2
+      f_prime_a <- f_prime(int[1] + diff(int)/2)
+    } else if(f_prime_a > 0)
+      {
+        int[2] <- int[2] - diff(int)/2
+        f_prime_a <- f_prime(int[1] - diff(int)/2)
+      } else 
+        {
+          break
+        }
+    if(diff(int) < precision)
+    {
+      break
+    }
+    print(paste0("Iteration ", i+1, "; Estimate = ", f_prime_a ))
+  }
+  cat("Minimum found at x = ", int[1] + diff(int)/2, "; Iterations: ", i, "\n")
+  int[1] + diff(int)/2
+}
+
+```
+
+### newton's method
+```{r}
+newton <- function(f_prime, f_dbl, precision = 1e-6, start)
+{
+  # ::: f_prime is first derivative function
+  # ::: f_dbl is second derivitive function
+  # ::: start is starting 'guess'
+  
+  x_old <- start
+  x_new <- x_old - f_prime(x_old)/f_dbl(x_old)
+  
+  i <- 1 # ::: use 'i' to print iteration number
+  print(paste0("Iteration ", i, "; Estimate = ", x_new) )
+  while (abs(f_prime(x_new)) > precision)
+  {
+    x_old <- x_new
+    x_new <- x_old - f_prime(x_old)/f_dbl(x_old)
+    # ::: redefine variables and calculate new estimate
+    
+    # ::: keep track of iteration history
+    print(paste0("Iteration ", i+1, "; Estimate = ", x_new) )
+    i <- i + 1
+  }
+  cat("Minimum found at x = ", x_new, "; Iterations: ", i, "\n")
+}
+
+```
+
+## 4
+Newton's need 
+```{r}
+golden(f, c(0,4))
+bisection(f_prime, c(0,4))
+f_dbl <- function(x) (2*x^3 - 4*x)/(x^2 + 1)^2 - (2/9)*x^(-5/3)
+newton(f_prime, f_dbl, precision = 1e-6, 1)
+```
+
+## 5
+We think the performance of the method matched our expectations. From the above results we observed that the Newton's method converged the most quickly with only 9 iterations required. The Golden section method required 33 iterations and the bisection method required 26 iterations. Such results matched the characteristic of the those three selection method such that the Newton's method is effective, while the bisection method is more reliable but slower.
+
+
+# 6
+```{r}
+library(rgl)
+f <- function(x1, x2) {
+  x1^4 + x2^4 - 2*x1^2 + 2*x1*x2 - 3*x2^2 + 6*x1 - 4*x2 + 10
+}
+
+
+x1 <- seq(-3, 3, length = 50)
+x2 <- seq(-3, 3, length = 50)
+xy <- expand.grid(x1,x2)
+
+
+z <- mapply(FUN = f, xy[,1], xy[,2])
+z[z < -90] <- -90 
+
+plot3d(xy[,1], xy[,2], z, type = "n", radius = 1.5, 
+       col = "blue", zlim = c(-90, 90), xlab = "", 
+       ylab = "", zlab = "")
+surface3d(x1, x2, z = matrix(z,length(x1)), col = "blue", 
+          zlim = c(-90, 90), alpha = .9)
+```
+
+
+
+
+
+
+# 7
+```{r}
+df_dx1 <- function(x1, x2) {
+  4*x1^3 - 4*x1 + 2*x2 + 6
+}
+
+df_dx2 <- function(x1, x2) {
+  4*x2^3 + 2*x1 - 6*x2 - 4
+}
+gradf <- function(x1, x2) {
+  c(df_dx1(x1, x2), df_dx2(x1, x2))
+}
+
+```
+
+
+# 8
+```{r}
+gradient <- function(f,               # original function
+                     gradf,           # gradient function
+                     strtpt,          # starting point
+                     maxiter = 1000,   # maximum number iterations
+                     alpha = .05,      # fixed step size
+                     minimize = TRUE, # set to FALSE to maximize
+                     epsilon = 1e-5,  # stopping criterion
+                     iterhist = TRUE) # print iteration history
+{
+  p_old <- strtpt; error <- 1; i <- 1
+  while(error > epsilon)
+  {
+    if(iterhist == TRUE) print(paste0("Iter ", i, "; f(x) = ", f(p_old)))
+    if(i > maxiter) stop("Exceeded maximum number of iterations")
+    p_new <- gradf(p_old)
+    p_new <- p_new/sqrt(p_new%*%p_new) # Normalize the gradient vector
+    ### Subtract for minimization; add for maximization
+    ifelse(minimize, p_new <- p_old - alpha*p_new, p_new <- p_old + alpha*p_new)
+    ### Calculate stopping criterion
+    error <- sqrt((p_new - p_old) %*% (p_new - p_old)) / sqrt(p_old %*% p_old)
+    ### Redefine the old point to the new point for the next iteration
+    p_old <- p_new
+    i <- i + 1
+  } 
+  return(p_new)
+}
+
+# Define the function
+f <- function(x) {
+  x1 <- x[1]
+  x2 <- x[2]
+  return(x1^4 + x2^4 - 2*x1^2 + 2*x1*x2 - 3*x2^2 + 6*x1 - 4*x2 + 10)
+}
+
+# Define the gradient function
+grad_f <- function(x) {
+  x1 <- x[1]
+  x2 <- x[2]
+  return(c(4*x1^3 - 4*x1 + 2*x2 + 6, 4*x2^3 + 2*x1 - 6*x2 - 4))
+}
+
+# Find the minimum
+gradient(f = f, gradf = grad_f, strtpt = c(0,0), maxiter = 1000, minimize = TRUE, alpha = .05, epsilon = 0.022, iterhist = TRUE)
+```
+
+## 9
+To implement steepest ascent, we need to calculate the gradient of the function at the current point and normalize the gradient vector to obtain a unit vector pointing in the direction of steepest ascent, after remain the similar calculation, we need to add the current point with the step size and in the direction of the steepest ascent. In general, after implement steepest ascent to the function, it can converge more quickly.  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

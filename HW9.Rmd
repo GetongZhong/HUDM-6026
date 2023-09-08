@@ -1,0 +1,96 @@
+---
+title: "HW9"
+author: "Getong Zhong"
+date: "2023-04-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ISLR)
+```
+
+## Chapter 3 Problem 9
+### (a)
+```{r}
+pairs(Auto)
+```
+
+### (b)
+```{r}
+(cor_matrix <- cor(Auto[, -9]))
+```
+
+### (c)
+```{r}
+lr <- lm(mpg ~. - name , data = Auto)
+summary(lr)
+```
+Above is the summary of the model. From the summary we can see that P-value is < 2.2e-16, which means the p -value is less than the significant level of 0.05, therefore it suggested that there is at least one relationship between the predictorsand the response varaible. Displacement, weight, year, and origin have a statistically significant relationship with mpg at the 0.05 significance level. From the coefficient of year, it has the value of 0.750773, which suggest one unit increase in year will have 0.750773 unit increase in mpg. 
+
+### (d)
+Piints like 327, 394 seems like placed outside the 2 units of the standard residuals, and should be regard as bad leverage points. From the Normal QQ plot, we didn't observe extreme underfit of the normal distribution line. However, in the residuals plot, there is a slightly unequal variance as fitted values increases. In the standard residual plots, we didn't observe any usually large outliers.     
+```{r}
+par(mfrow = c(2, 2))
+plot(lr)
+```
+
+### (e)
+weight & origin and displacement & year are statistically significant since the p-value for both interactions are less than the significant level of 0.05. 
+```{r}
+lr2 <- lm(mpg ~. - name + origin * weight + year * displacement + origin * year +
+          origin * displacement, data = Auto)
+summary(lr2)
+```
+
+### (f)
+
+```{r}
+loglr <- lm (mpg ~. - name, data = Auto)
+summary(loglr)
+```
+
+```{r}
+sqrtlr <- lm(sqrt(mpg) ~. - name, data = Auto)
+summary(sqrtlr)
+```
+
+```{r}
+sqrlr <- lm(mpg^2 ~. - name, data = Auto)
+summary(sqrlr)
+```
+
+From the above summaries for each model, we can find all of them are statistically siginificant as they are have p-value that smaller than 0.05. In all the model summaries, variable acceraltions are not significant in all the transformations. On the other hands, Year, other, origin are all significant in all transformations. 
+
+## Chapter 4
+
+### Question 1
+From the logistic function: p(X) = 1 / (1 + exp(-[beta1 + beta2X1 +...betaXp]))
+we can get:
+p(X) = 1 - p(X) * exp(-[beta1 + beta2X1 +-...betaXp])
+and then rerrange the equation we got: p(X) / (1 - p(X)) = exp(beta1 + beta2X1 +...betaXp)
+finally we take the log of the both sides: 
+log[p(X) / (1 - p(X))] = beta1 + beta2X1 +...betaXp
+that is the logit regression.
+
+### Question 6
+
+#### (a)
+P(Y = 1 | X1 = 40, X2 = 3.5) = 1 / (1 + exp(-(-6 + 0.05 * 40 + 1 * 3.5))) = 0.731
+Therefore, the possibility for students who studies for 40h and has undergrad GPA of 3.5 gets an A in the class is 73.1%.
+
+#### (b)
+set the function : 0.5 = 1 / (1 + exp(-(-6 + 0.05 * h + 1 * 3.5))) and solve for h we got, h = 50. Therefore, students in part (a) need to study 50h to have a 50 % chance of getting an A in the class.
+
+### Question 9
+
+#### (a)
+Recall the function: Odd = P(default)/ (1 - P(default)). Given the odd is 0.37, solve for the P(default) we got that P(default) + 0.37 * P (default) = 0.37, P(default) = 0.37/1.37 = 0.27. Therefore, on average, 27% of people with an odds of 0.37 of defaulting on their credit card payment will in fact default.
+
+#### (b)
+If P(default) = 0.16, Odd = 0.16/(1 - 0.16) = 0.191. Therefore, the odds she will be default is 0.191.
+
+
+

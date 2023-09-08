@@ -1,0 +1,296 @@
+---
+title: "Final Project HUDM 6026"
+author: "Getong Zhong & Frank Li"
+date: "2023-05-02"
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    
+---
+<br>
+<br>
+<br>
+
+Getong Zhong and Frank Li worked together in selecting the appropriate data for the project.For the coding aspect, Getong handled the data generation and the estimators. Frank wrote the code for Monte Carlo simulation and Bootstrap resampling. Both Getong and Frank collaborated to work on the Jackknife resampling method. In terms of the write-up, Getong took responsibility for the first three sections and the conclusion. Frank contributed to analysis the results of each methods
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Select a motivating data set
+Our main focus on this project is analyzing Walmart's sales records. Walmart, being one of the most recognized retail in the U.S., has a vast amount of data at its disposal. The data set we have chosen spans from 2010 to 2012 and contains the weekly sales records from 45 different Walmart stores and it is publicly available on Kaggle.
+
+For our analysis, we plan to utilize a numeric outcome variable and a numeric predictor variable. The numeric outcome variable will be the weekly sales, which is a continuous variable. On the other hand, the numeric predictor variable could be one or multiple factors, including the Consumer Price Index (CPI), Unemployment Index, Temperature, Fuel price, and Holiday Index (whether the week is a special holiday week). Due to the requirement of this project, we only include CPI as the only predictor to make our model a simple linear regression model.
+
+
+# Data generation
+Data generation part in this project in quite straightforward. We are going to simulate data from the simple linear regression model we create for the "Walmart_Store_sales" data set,with "Weekly_Sales" as the response variable and "CPI" as the predictor. After We got the value of intercept, and slope for the predictor from the model summary, we are going to record it for latter use in the data generation function to generate our own data from the real-life data.
+```{r}
+# Import data set
+data <- read.csv("Walmart_Store_sales.csv", header = TRUE) 
+head(data)
+# Run a simple linear regression model 
+model <- lm (Weekly_Sales ~ CPI, data = data)
+summary(model)
+```
+
+In the data generation function we wrote "dat_gen", we take 5 parameters: "n" determines the size of data we would like to generate; "beta_0" is the intercept value we got from the previous simple linear regression model; "beta_1" is the slope of the predictor we got from the previous simple linear regression model; "x_dist" is the distribution function we use to generate the error; and sigma is the standard deviation from the previous model, we use it to generate the error.
+```{r}
+dat_gen <- function(n, beta_0, beta_1, x_dist, sigma) {
+  # create new random variable
+  x1 <- x_dist(n)
+  # create new response variable
+  y <- beta_0 + beta_1 * x1 + rnorm(n, mean = 0, sd = sigma)
+  return(data.frame(X1 = x1, Weekly_sales = y))
+}
+
+data_simulation <- dat_gen(n = nrow(data), beta_0 = model$coefficients[1], beta_1 = model$coefficients[2], x_dist = rnorm, sigma = summary(model)$sigma)
+head(data_simulation, 10)
+```
+
+# Estimators 
+In this section, we have developed a function, reg(), constructed entirely from scratch. This function ingests a data frame generated from the dat_gen() function and outputs estimates for two key parameters: the slope on X (denoted as beta1) and the error variance (denoted as sigma squared).
+
+To generate these estimates, we have utilized two different estimators for each parameter. The first estimator for beta1 is the least squares estimator. It minimizes the sum of the squared residuals, providing the best linear unbiased estimate.
+
+The second estimator for beta1 is an alternative estimator. Unlike the least squares estimator, this method involves averaging the ratio of the difference between each observed value and the mean of the observed values to the corresponding difference for predictor variables.
+
+For sigma squared, the first estimator we used is the usual estimator, which calculates the sum of squared errors divided by the degree of freedom (n-2). This estimator reflects the average squared difference between the observed and predicted values, providing an estimate of the variance of the error term.
+
+The second estimator for sigma squared is an alternative estimator. This estimator divides the sum of squared errors by the sample size (n), rather than by the degree of freedom. This is a more direct estimate of the average of squared errors.
+
+These estimators enable us to obtain key parameters for our regression model, thereby allowing us to better understand the relationship between our predictor and response variables.
+
+```{r}
+reg <- function(data) {
+  n <- nrow(data)
+  xbar <- mean(data[,1])
+  ybar <- mean(data[,2])
+  # estimate beta1 using the least squares estimator
+  beta1 <- sum((data[,1] - xbar) * (data[,2] - ybar)) / sum((data[,1] - xbar)^2)
+  
+  # estimate beta1 using the alternative estimator
+  beta1a <- 1 / mean((data[,2] - ybar) / (data[,1] - xbar))
+  
+  # estimate sigma^2 using the usual estimator
+  sig2 <- sum((data[,2] - predict(lm(Weekly_sales ~ X1, data = data))^2) / (n - 2))
+  
+  # estimate sigma^2 using the alternative estimator
+  sig2a <- sum((data[,2] - predict(lm(Weekly_sales ~ X1, data = data)))^2) / n
+  
+  return(list(beta1a = beta1,
+              beta1_a = beta1a,
+              sigma2 = sig2,
+              sigma2a = sig2a))
+}
+```
+
+```{r}
+reg_results <- reg(data_simulation)
+
+```
+
+# Monte Carlo simulation 
+In this section, our goal is to run a Monte Carlo simulation from the dat_gen() function we have created previously. At first we set the sample size n to be 40 and number of replications R to be 1000. Then we defined the true values of the parameters beta_0, beta_1, and sigma using model from the Data generation section. After running the Monte Carlo simulation using replicate() we have named it as dat_list. We then apply the reg() function to our simulation and the result is saved as reg_results2. 
+
+```{r}
+library(plotrix)
+# Define sample size and replications
+n = 40
+R = 1000
+
+beta_0 = model$coefficients[1]
+beta_1 = model$coefficients[2]
+# Monte Carlo simulation
+dat_list <- replicate(n = R, expr = dat_gen(n = n, beta_0 = model$coefficients[1], beta_1 = model$coefficients[2], x_dist = rnorm, sigma = summary(model)$sigma),simplify = FALSE)
+
+# Apply reg() function to replication 
+reg_results_mc <- lapply(dat_list, reg)
+```
+
+The following codes generate histograms of sampling distributions with density plots for each of the four statistics from the function reg(): beta1a, beta1_a, sigma2, and sigma2a. From the shapes of these histograms we can say that they are likely to have normal distributions. The spread of the histogram for beta1_a is quite small compared to others and it is centered at 0. Based on this it seems like beta1_a is not a proper estimator for the data set. 
+
+```{r}
+# Extract each estimator from reg_results2
+beta1a <- sapply(reg_results_mc, function(x) x$beta1a)
+beta1_a <- sapply(reg_results_mc, function(x) x$beta1_a)
+sigma2 <- sapply(reg_results_mc, function(x) x$sigma2)
+sigma2a <- sapply(reg_results_mc, function(x) x$sigma2a)
+
+# Create histogram with density plot for each estimator
+par(mfrow = c(2, 2))
+
+hist(beta1a, freq = FALSE, main = "Histogram of beta1a")
+lines(density(beta1a), col = "red")
+
+hist(beta1_a, freq = FALSE, main = "Histogram of beta1_a")
+lines(density(beta1_a), col = "red")
+
+hist(sigma2, freq = FALSE, main = "Histogram of sigama2")
+lines(density(sigma2), col = "red")
+
+hist(sigma2a, freq = FALSE, main = "Histogram of sigama2a")
+lines(density(sigma2a), col = "red")
+
+```
+
+
+We then estimate the means and standard error of the means for each of the 4 estimators. By using the lapply() function we firstly converted reg_results2 into a data frame called result. Then we obtain the means for beta1a, beta1_a, sigma2, sigma2a as 1.236271e+03, 2.955791e-06, -1.591730e+12, and 3.056152e+11. The standard error of the means for beta1a, beta1_a, sigma2, sigma2a are 2.944089e+03, 2.517280e-06, 7.414967e+09, and 2.165612e+09. 
+
+```{r}
+# Make reg_results_mc a matrix for calculation
+result_mc <- do.call(rbind, lapply(reg_results_mc, unlist))
+# Means and standard error for each estimator based on Monte Carlo replications
+means <- colMeans(result_mc)
+print(means)
+std.error(result_mc)
+```
+
+Furthermore, we obtained the bias for each estimator from the difference between their means and reg_results. We used the apply() function to obtain their variances and the MSE is calculated as the square of bias plus the variance. The results are as the following: 
+```{r}
+# Estimate the bias, variance and MSE of each estimator
+bias_beta1a <- means['beta1a'] - reg_results$beta1a
+bias_beta1_a <- means['beta1_a'] - reg_results$beta1_a
+bias_sigma2 <- means['sigma2'] - reg_results$sigma2
+bias_sigma2a <- means['sigma2a'] - reg_results$sigma2a
+bias <- c(bias_beta1a,bias_beta1_a,bias_sigma2,bias_sigma2a)
+bias
+
+var <- c(var(beta1a), var(beta1_a), var(sigma2), var(sigma2a))
+var
+mse <- bias^2 + var
+mse
+```
+
+From the results, beta1_a has the minimum bias of 8.753944e-06 and is the closest to 0, making it less bias than the other 3 estimators. It also has the minimum variance of 4.261453e-08 and minimum MSE of 4.269116e-08 which makes it a better estimator overall. 
+
+
+# Bootstrap 
+
+In this section we used the bootstrap method for data generation and we generate a single data set of sample size n =40 from the previous function dat_gen() and also a bootstrap replications B =500. We applied the previous reg() function to our bootstrap replications and the results are stored in reg_results3. 
+```{r}
+set.seed(123)
+# Define sample size and bootstrap replications
+n = 40
+B = 500
+data_boot <- dat_gen(n = n, beta_0 = beta_0, beta_1 = beta_1, x_dist = rnorm, sigma = summary(model)$sigma)
+# Perform bootstrap re sampling 
+dat_list1 <- replicate(n = n,
+                      expr = dat_gen(n = n, beta_0 = beta_0, beta_1 = beta_1, x_dist = rnorm, sigma = summary(model)$sigma),
+                      simplify = FALSE)
+
+
+# Apply reg() function
+reg_results_bs <- lapply(dat_list1, reg)
+```
+
+Similar from the previous section, the following codes generate histograms of sampling distributions with density plots for each of the four statistics from the function reg(): beta1a, beta1_a, sigma2, and sigma2a.Unlike the histograms from the previous section, histograms produced by the bootstrap method don't have a normal distribution in any of them. 
+
+```{r}
+# Extract each estimator from reg_results_bs
+
+beta1a <- sapply(reg_results_bs, function(x) x$beta1a)
+beta1_a <- sapply(reg_results_bs, function(x) x$beta1_a)
+sigma2 <- sapply(reg_results_bs, function(x) x$sigma2)
+sigma2a <- sapply(reg_results_bs, function(x) x$sigma2a)
+par(mfrow = c(2, 2))
+
+# Create histogram with density plot for each estimator
+hist(beta1a, freq = FALSE, main = "Histogram of beta1a")
+lines(density(beta1a), col = "red")
+
+hist(beta1_a, freq = FALSE, main = "Histogram of beta1_a")
+lines(density(beta1_a), col = "red")
+
+hist(sigma2, freq = FALSE, main = "Histogram of sigama2")
+lines(density(sigma2), col = "red")
+
+hist(sigma2a, freq = FALSE, main = "Histogram of sigama2a")
+lines(density(sigma2a), col = "red")
+```
+
+
+We then performed a similar calculation on the means and standard error of means for the estimators and beta1_a still have the minimum mean of -5.098269e-06 and standard error of mean of 3.802562e-06. As for bias, variance and MSE, beta1_a also obtain the 
+```{r}
+# Make reg_results_mc a matrix for calculation
+result_bs <- do.call(rbind, lapply(reg_results_bs, unlist))
+means <- colMeans(result_bs)
+print(means)
+std.error(result_bs)
+
+bias_beta1a <- means['beta1a'] - reg_results$beta1a
+bias_beta1_a <- means['beta1_a'] - reg_results$beta1_a
+bias_sigama2 <- means['sigama2'] - reg_results$sigama2
+bias_sigama2a <- means['sigama2a'] - reg_results$sigama2a
+bias <- c(bias_beta1a,bias_beta1_a,bias_sigama2,bias_sigama2a)
+bias
+var <- c(var(beta1a), var(beta1_a), var(sigma2), var(sigma2a))
+var
+mse <- bias^2 + var
+mse
+```
+
+
+# Jackknife
+```{r}
+set.seed(123)
+
+
+# Compute the original estimates
+original_estimates <- reg(data_boot)
+
+# Initialize vectors to store the jackknife estimates
+beta1_jack <- beta1a_jack <- sigma2_jack <- sigma2a_jack <- numeric(nrow(data_boot))
+
+# Compute the jackknife estimates
+for (i in 1:nrow(data_boot)) {
+  jackknife_sample <- data_boot[-i, ]
+  jackknife_estimates <- reg(jackknife_sample)
+  beta1_jack[i] <- jackknife_estimates$beta1a
+  beta1a_jack[i] <- jackknife_estimates$beta1_a
+  sigma2_jack[i] <- jackknife_estimates$sigma2
+  sigma2a_jack[i] <- jackknife_estimates$sigma2a
+}
+
+# Compute the jackknife estimate of bias
+bias_beta1 <- (nrow(data_boot) - 1) * (mean(beta1_jack) - original_estimates$beta1a)
+bias_beta1a <- (nrow(data_boot) - 1) * (mean(beta1a_jack) - original_estimates$beta1_a)
+bias_sigma2 <- (nrow(data_boot) - 1) * (mean(sigma2_jack) - original_estimates$sigma2)
+bias_sigma2a <- (nrow(data_boot) - 1) * (mean(sigma2a_jack) - original_estimates$sigma2a)
+
+# Compute the jackknife estimate of MSE
+var_beta1 <- var(beta1_jack)
+var_beta1a <- var(beta1a_jack)
+var_sigma2 <- var(sigma2_jack)
+var_sigma2a <- var(sigma2a_jack)
+bias_var <- data.frame(
+  Estimator = c("beta1", "beta1a", "sigma2", "sigma2a"),
+  Bias = c(bias_beta1, bias_beta1a, bias_sigma2, bias_sigma2a),
+  Varance = c(var_beta1, var_beta1a, var_sigma2, var_sigma2a)
+)
+bias_var
+```
+
+
+
+
+Based on the results, we compared the bias, variance and MSE of estimators between Monte Carlo, bootstrap, and jackknife procedures. The bias for the estimators from both Monte Carlo and bootstrap procedures are all negative except for beta1_a from Monte Carlo simulation. Both Monte Carlo and bootstrap procedures generates relative small variance of the beta1_a estimator, as well as the mean square error for the beta_a estimator. 
+
+The Monte Carlo simulation tends to have a relative large variance over the other two procedures and this is most likely caused by its data generation process. The bootstrap method tends to have a relatively small bias overall since it generates subsamples from the original sample and eliminates any bias from the original sample. 
+
+# Conclusion
+Monte Carlo simulations offer the advantage of flexibility and universality. These simulations handle very complex systems which are difficult to model analytically. They can incorporate a large number of variables and model their interactions. However the accuracy of Monte Carlo simulations depends largely on the number of iterations run, which can also increase computational load.
+
+Bootstrap methods involve generating many subsamples from the original data and recalculating the estimator for each subsample. Bootstrapping can estimate the distribution of an estimator when the underlying distribution is unknown or complex. One of the main advantages of bootstrapping is that it makes fewer assumptions about the data compared to other methods. However, similar to Monte Carlo simulations, Bootstrap methods are also computationally intensive, 
+
+The jackknife method is another resampling technique that take out one observation at a time from the dataset and recalculating the estimator for bias and MSE. It is relatively simple and computationally efficient, especially compared to Bootstrap. Jackknife can provide robust estimates of bias and variance, even if the data contain outliers. However, it might not be efficient when complex estimators are presented. 
+
+In conclusion, the choice between Monte Carlo, bootstrap, and jackknife depends on the specific use case, including the nature of the data, the complexity of the estimator, and the computational resources available. 
+
+
+
+
+

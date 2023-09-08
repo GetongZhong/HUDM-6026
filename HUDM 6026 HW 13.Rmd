@@ -1,0 +1,96 @@
+---
+title: "HUDM 6026 HW 13"
+author: "Frank Li"
+date: "2023-04-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. 
+
+
+
+# 5. 
+Majority vote approach:
+
+There are 6 estimates of P > 0.5 so the final classification is red. 
+
+Classify based on the average probability: 
+
+```{r}
+mean(c(0.1, 0.15, 0.2, 0.2, 0.55, 0.6, 0.6, 0.65, 0.7, 0.75))
+```
+
+The average probability is 0.45 so the final classification is green. 
+
+# 6. 
+
+
+# 8.
+## (a)
+```{r}
+library (tree)
+library (ISLR2)
+attach (Carseats)
+set.seed (123)
+train <- sample (1: nrow (Carseats), nrow(Carseats)/2)
+Carseats.train <- Carseats[train , ]
+Carseats.test <- Carseats[-train , ]
+```
+
+
+## (b)
+```{r}
+tree.carseats <- tree (Sales ~., data = Carseats.train)
+plot(tree.carseats)
+text(tree.carseats, pretty = 0)
+```
+
+```{r}
+tree.pred <- predict (tree.carseats , Carseats.test)
+mean((tree.pred - Carseats.test$Sales)^2)
+```
+
+ShelveLoc and price are two variables that can best predict Sales since they 
+appear on the top of the regression tree. The test MSE is 4.395357.
+
+## (c)
+```{r}
+cv.carseats <- cv.tree(tree.carseats , FUN = prune.tree)
+names (cv.carseats)
+cv.carseats
+```
+
+```{r}
+par (mfrow = c(1, 2))
+plot (cv.carseats$size , cv.carseats$dev, type = "b")
+plot (cv.carseats$k, cv.carseats$dev, type = "b")
+prune.carseats <- prune.tree (tree.carseats , best = 5)
+plot (prune.carseats)
+text (prune.carseats , pretty = 0)
+```
+
+
+```{r}
+tree.pred <- predict (prune.carseats , Carseats.test)
+mean((Carseats.test$Sales - tree.pred)^2)
+```
+
+Pruning the tree DOES NOT improve the MSE, i.e. it goes from 4.395357 to 4.798268. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

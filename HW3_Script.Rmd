@@ -1,0 +1,26 @@
+---
+title: "Hw3"
+author: "Getong Zhong"
+date: "2023-02-06"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+## 1. Generate x1 to x10 by multivariate normal
+## 2. dichotomous 
+## x1 <- ifelse(x1>mean(x1),1,0) 
+##    ...
+##    x10 <- ...
+
+
+## 3. pick one scenario model through A to G
+
+
+## Generate from a logistic model: 
+
+```

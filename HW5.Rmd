@@ -1,0 +1,150 @@
+---
+title: "HW5"
+author: "Getong Zhong"
+date: "2023-02-27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1
+```{r}
+f_prime <- function(x) -2*x/(x^2+1) + (1/3)*x^(-2/3)
+```
+
+## 2 
+```{r}
+f <- function(x) -log(x^2 + 1) + x^(1/3)
+
+x <- seq(0, 4, 0.01)
+
+plot(x, f(x), type = "l", col = "blue", lty = 1, ylim = c(-2, 3),
+     xlab = "x", ylab = "y", main = "f(x) and f'(x)")
+
+lines(x, f_prime(x), col = "red", lty = 2)
+legend("topright", legend = c("f(x)", "f'(x)"), col = c("blue", "red"),
+       lty = c(1, 2))
+
+```
+
+## 3 
+### golden section search
+```{r}
+golden <- function(f, int, precision = 1e-6)
+{
+  # ::: This function implements the golden section search for a 
+  # ::: *minimum* for the function 'f' on the range [int]
+  # ::: with precision no greater than 'precision'.
+  # ::: Note: 'int' is an interval such as c(2,3).
+  # ::: If you want to *maximize*, multiply your function by -1.
+  
+  rho <- (3-sqrt(5))/2 # ::: Golden ratio
+  # ::: Work out first iteration here
+  f_a <- f(int[1] + rho*(diff(int)))
+  f_b <- f(int[2] - rho*(diff(int)))
+  ### How many iterations will we need to reach the desired precision?
+  N <- ceiling(log(precision/(diff(int)))/log(1-rho))
+  for (i in 1:(N))                    # index the number of iterations
+  {
+    if (f_a < f_b)  
+    {
+      int[2] <- int[1] + rho * (int[2] - int[1])
+      f_b <- f_a
+      f_a <- f(int[1] + rho * (diff(int)))
+
+      
+    } else{
+      if (f_a >= f_b)
+      {
+        int[1] <- int[1] + rho * (int[2] - int[1])
+        f_a <- f_b
+        f_b <- f(int[2] - rho * (diff(int)))
+      } }
+    print(paste0("Iteration ", i+1, "; Estimate = ", int[1]) )
+  }
+  
+}
+
+```
+
+### bisection method
+```{r}
+bisection <- function(f_prime, int, precision = 1e-7)
+{
+  # ::: f_prime is the function for the first derivative
+  # ::: of f, int is an interval such as c(0,1) which 
+  # ::: denotes the domain
+  
+  N <- ceiling(log(precision/(diff(int)))/log(.5))
+  f_prime_a <- f_prime(int[1] + diff(int)/2)
+  for (i in 1:N)
+  {
+    if(f_prime_a < 0)
+    {
+      int[1] <- int[1] + diff(int)/2
+      f_prime_a <- f_prime(int[1] + diff(int)/2)
+    } else
+      if(f_prime_a > 0)
+      {
+        int[2] <- int[2] + diff(int)/2
+        f_prime_a <- f_prime(int[1] + diff(int)/2)
+      } else
+        if(f_prime_a == 0)
+        {
+          break
+        }
+    if(diff(int) < precision)
+    {
+      break
+    }
+    print(paste0("Iteration ", i+1, "; Estimate = ", int[1]) )
+  }
+  
+}
+
+```
+
+### newton's method
+```{r}
+newton <- function(f_prime, f_dbl, precision = 1e-6, start)
+{
+  # ::: f_prime is first derivative function
+  # ::: f_dbl is second derivitive function
+  # ::: start is starting 'guess'
+  
+  x_old <- start
+  x_new <- x_old - f_prime(x_old)/f_dbl(x_old)
+  
+  i <- 1 # ::: use 'i' to print iteration number
+  print(paste0("Iteration ", i, "; Estimate = ", x_new) )
+  while (abs(f_prime(x_new)) > precision)
+  {
+    x_old <- x_new
+    x_new <- x_old - f_prime(x_old)/f_dbl(x_old)
+    # ::: redefine variables and calculate new estimate
+    
+    # ::: keep track of iteration history
+    print(paste0("Iteration ", i+1, "; Estimate = ", x_new) )
+    i <- i + 1
+  }
+}
+
+```
+
+## 4
+
+```{r}
+golden(f, c(0,4))
+bisection(f_prime, c(0,4))
+f_dbl <- function(x) (2*x^3 - 4*x)/(x^2 + 1)^2 - (2/9)*x^(-5/3)
+newton(f_prime, f_dbl, precision = 1e-6, 1)
+```
+## 5
+we observed that the Newton's method converged the most quickly with only 9 iterations required. The Golden section method required 33 iterations and the bisection method required 26 iterations. This the Newton's method may be more effective when the function is well-behaved, while the bisection method is more reliable but slower.
+
+Overall, the number of iterations required by each method depends on the specifics of the problem at hand, and it is important to consider multiple methods and adjust parameters such as the initial interval and precision required to obtain the most efficient and accurate result.
+
+
+
